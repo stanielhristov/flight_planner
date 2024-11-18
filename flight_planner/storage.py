@@ -266,6 +266,46 @@ class AirportStorage:
         finally:
             connection.close()
 
+class FlightStorage:
+    def create(self, departure_airport_id, arrival_airport_id, departure_time, travel_time, price):
+        connection = get_connection()
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT id FROM airports WHERE id = %s", (departure_airport_id,))
+            departure_airport = cursor.fetchone()
+
+            if not departure_airport:
+                return {"error": f"Departure airport with ID {departure_airport_id} not found"}
+
+            cursor.execute("SELECT id FROM airports WHERE id = %s", (arrival_airport_id,))
+            arrival_airport = cursor.fetchone()
+
+            if not arrival_airport:
+                return {"error": f"Arrival airport with ID {arrival_airport_id} not found"}
+
+        flight = Flight(
+            departure_airport_id=departure_airport_id,
+            arrival_airport_id=arrival_airport_id,
+            departure_time=departure_time,
+            travel_time=travel_time,
+            price=price
+        )
+
+        connection = get_connection()
+        with connection.cursor() as cursor:
+            cursor.execute(
+                """
+                INSERT INTO flights (departure_airport_id, arrival_airport_id, departure_time, travel_time, price)
+                VALUES (%s, %s, %s, %s, %s)
+                """,
+                (flight.departure_airport_id, flight.arrival_airport_id,
+                 flight.departure_time.strftime('%H:%M'), flight.travel_time, flight.price)
+            )
+            connection.commit()
+
+        return flight
+
+
+
 
 
 

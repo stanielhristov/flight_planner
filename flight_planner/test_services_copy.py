@@ -72,36 +72,36 @@ class TestAirportService(unittest.TestCase):
         self.assertEqual(response, {'id': 1, 'name': 'Test Airport', 'city': 1})
 
     @patch('flight_planner.services.AirportStorage')
-    def test_get_all_airports(self, mock_city_storage):
-        mock_storage_instance = mock_city_storage.return_value
+    def test_get_all_airports(self, mock_airport_storage):
+        mock_storage_instance = mock_airport_storage.return_value
         mock_storage_instance.get_all.return_value = [{'id': 1, 'name': 'Test Airport','city': 1}]
 
         response = AirportService.get_all_airports()
         self.assertEqual(response, [{'id': 1, 'name': 'Test Airport', 'city': 1}])
 
     @patch('flight_planner.services.AirportStorage')
-    def test_get_airport(self, mock_city_storage):
-        mock_storage_instance = mock_city_storage.return_value
-        mock_storage_instance.get_airport.return_value = {'id': 1, 'name': 'Test Airport', 'city': 1}
+    def test_get_airport(self, mock_airport_storage):
+        mock_storage_instance = mock_airport_storage.return_value
+        mock_storage_instance.get.return_value = {'id': 1, 'name': 'Test Airport', 'city': 1}
 
         response = AirportService.get_airport(1)
         self.assertEqual(response, {'id': 1, 'name': 'Test Airport', 'city': 1})
 
     @patch('flight_planner.services.AirportStorage')
-    def test_get_airport_not_found(self, mock_city_storage):
-        mock_storage_instance = mock_city_storage.return_value
+    def test_get_airport_not_found(self, mock_airport_storage):
+        mock_storage_instance = mock_airport_storage.return_value
         mock_storage_instance.get.return_value = None
 
         with self.assertRaises(KeyError) as context:
             AirportService.get_airport(1)
 
     @patch('flight_planner.services.AirportStorage')
-    def test_delete_airport(self, mock_city_storage):
+    def test_delete_airport(self, mock_airport_storage):
         response = AirportService.delete_airport(1)
         self.assertEqual(response, '')
 
     @patch('flight_planner.services.AirportStorage')
-    def test_delete_all_airports(self, mock_city_storage):
+    def test_delete_all_airports(self, mock_airport_storage):
         response = AirportService.delete_all_airports()
         self.assertEqual(response, '')
 

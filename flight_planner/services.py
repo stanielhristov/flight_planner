@@ -134,7 +134,7 @@ class AirportService:
                     return {"error": "Airport not found"}
 
         except Exception as e:
-            connection.rollback()  # Rollback in case of any error
+            connection.rollback()
             return {"error": f"Error updating airport: {str(e)}"}
 
         finally:
