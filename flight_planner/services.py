@@ -1,8 +1,7 @@
 from connection import get_connection
 from datetime import datetime
-from entities import Flight
-from storage import CityStorage
-from storage import AirportStorage
+from storage import CityStorage, FlightStorage, AirportStorage
+
 
 
 class CityService:
@@ -146,7 +145,6 @@ class FlightService:
 
     @classmethod
     def create_flight(cls, json):
-
         try:
             departure_airport_id = json["departureAirport"]
             arrival_airport_id = json["arrivalAirport"]
@@ -160,49 +158,15 @@ class FlightService:
                 return {
                     "error": f"Invalid price format: {price_str}. Ensure it's a valid number with or without a dollar sign."}
 
-            connection = get_connection()
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT id FROM airports WHERE id = %s", (departure_airport_id,))
-                departure_airport = cursor.fetchone()
+            storage = FlightStorage()
+            database_flight = storage.create(departure_airport_id, arrival_airport_id, departure_time, travel_time, price)
 
-                if not departure_airport:
-                    return {"error": f"Departure airport with ID {departure_airport_id} not found"}
-
-                cursor.execute("SELECT id FROM airports WHERE id = %s", (arrival_airport_id,))
-                arrival_airport = cursor.fetchone()
-
-                if not arrival_airport:
-                    return {"error": f"Arrival airport with ID {arrival_airport_id} not found"}
-
-            flight = Flight(
-                departure_airport_id=departure_airport_id,
-                arrival_airport_id=arrival_airport_id,
-                departure_time=departure_time,
-                travel_time=travel_time,
-                price=price
-            )
-
-            connection = get_connection()
-            with connection.cursor() as cursor:
-                cursor.execute(
-                    """
-                    INSERT INTO flights (departure_airport_id, arrival_airport_id, departure_time, travel_time, price)
-                    VALUES (%s, %s, %s, %s, %s)
-                    """,
-                    (flight.departure_airport_id, flight.arrival_airport_id,
-                     flight.departure_time.strftime('%H:%M'), flight.travel_time, flight.price)
-                )
-                connection.commit()
-
-            return {"message": "Flight created successfully"}
+            return database_flight.to_dict()
 
         except Exception as e:
-            if 'connection' in locals():
-                connection.rollback()
             return {"error": f"Error creating flight: {str(e)}"}
-        finally:
-            if 'connection' in locals():
-                connection.close()
+
+
 
     @classmethod
     def get_all_flights(cls, offset, max_count, sort_by, sort_order):
@@ -358,42 +322,22 @@ class FlightService:
 
     @classmethod
     def get_flight(cls, flight_id):
-        connection = get_connection()
+        storage = FlightStorage()
 
-        if connection is None:
-            return {"error": "Could not establish a database connection"}
+        flight = storage.get(flight_id)
 
-        try:
-            query = """
-                    SELECT flight_id, departure_airport_id, arrival_airport_id, departure_time, travel_time, price
-                    FROM flights
-                    WHERE flight_id = %s
-                """
+        if flight is None:
+            raise KeyError()
+        else:
+            return flight
 
-            with connection.cursor() as cursor:
-                cursor.execute(query, (flight_id,))
-                flight = cursor.fetchone()
+    @classmethod
+    def get_all_flight(cls):
+        storage = FlightStorage()
 
-                if flight is None:
-                    return {"error": f"Flight with ID {flight_id} not found"}
+        flights = storage.get_all()
 
-                flight_data = {
-                    "id": flight[0],
-                    "departure_airport_id": flight[1],
-                    "arrival_airport_id": flight[2],
-                    "departure_time": flight[3].strftime('%H:%M') if flight[3] else None,
-                    "travel_time": flight[4],
-                    "price": flight[5]
-                }
-
-                return {"flight": flight_data}
-
-        except Exception as e:
-            return {"error": f"Error fetching flight: {str(e)}"}
-
-        finally:
-            if 'connection' in locals():
-                connection.close()
+        return flights
 
     @classmethod
     def update_flight(cls, flight_id, json):
@@ -470,33 +414,14 @@ class FlightService:
 
     @classmethod
     def delete_flight(cls, flight_id):
-        connection = get_connection()
+        storage = FlightStorage()
+        storage.delete(flight_id)
 
-        if connection is None:
-            return {"error": "Could not establish a database connection"}
+        return ''
 
-        try:
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT flight_id FROM flights WHERE flight_id = %s", (flight_id,))
-                flight = cursor.fetchone()
+    @classmethod
+    def delete_all_flights(self):
+        storage = FlightStorage()
+        storage.delete_all()
 
-                if flight is None:
-                    return {"error": "Flight not found"}
-
-                cursor.execute("DELETE FROM flights WHERE flight_id = %s", (flight_id,))
-                rows_deleted = cursor.rowcount
-                connection.commit()
-
-                if rows_deleted > 0:
-                    return {"message": f"Flight with ID {flight_id} has been deleted successfully"}
-                else:
-                    return {"error": "Failed to delete the flight"}
-
-        except Exception as e:
-            if 'connection' in locals():
-                connection.rollback()
-            return {"error": f"Error deleting flight: {str(e)}"}
-
-        finally:
-            if 'connection' in locals():
-                connection.close()
+        return ''

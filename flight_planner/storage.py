@@ -1,4 +1,5 @@
 from connection import get_connection
+from flight_planner.entities import Flight
 
 
 
@@ -23,7 +24,6 @@ class CityStorage:
         finally:
             connection.close()
 
-
     def get_all(self):
         connection = get_connection()
 
@@ -44,7 +44,6 @@ class CityStorage:
 
         finally:
             connection.close()
-
 
     def get(self, city_id):
         connection = get_connection()
@@ -140,6 +139,7 @@ class CityStorage:
 
         finally:
             connection.close()
+
 
 class AirportStorage:
     def create(self, name, city):
@@ -266,53 +266,193 @@ class AirportStorage:
         finally:
             connection.close()
 
+
 class FlightStorage:
     def create(self, departure_airport_id, arrival_airport_id, departure_time, travel_time, price):
-        connection = get_connection()
-        with connection.cursor() as cursor:
-            cursor.execute("SELECT id FROM airports WHERE id = %s", (departure_airport_id,))
-            departure_airport = cursor.fetchone()
+        try:
 
-            if not departure_airport:
-                return {"error": f"Departure airport with ID {departure_airport_id} not found"}
+            connection = get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT id FROM airports WHERE id = %s", (departure_airport_id,))
+                departure_airport = cursor.fetchone()
 
-            cursor.execute("SELECT id FROM airports WHERE id = %s", (arrival_airport_id,))
-            arrival_airport = cursor.fetchone()
+                if not departure_airport:
+                    return {"error": f"Departure airport with ID {departure_airport_id} not found"}
 
-            if not arrival_airport:
-                return {"error": f"Arrival airport with ID {arrival_airport_id} not found"}
+                cursor.execute("SELECT id FROM airports WHERE id = %s", (arrival_airport_id,))
+                arrival_airport = cursor.fetchone()
 
-        flight = Flight(
-            departure_airport_id=departure_airport_id,
-            arrival_airport_id=arrival_airport_id,
-            departure_time=departure_time,
-            travel_time=travel_time,
-            price=price
-        )
+                if not arrival_airport:
+                    return {"error": f"Arrival airport with ID {arrival_airport_id} not found"}
 
-        connection = get_connection()
-        with connection.cursor() as cursor:
-            cursor.execute(
-                """
-                INSERT INTO flights (departure_airport_id, arrival_airport_id, departure_time, travel_time, price)
-                VALUES (%s, %s, %s, %s, %s)
-                """,
-                (flight.departure_airport_id, flight.arrival_airport_id,
-                 flight.departure_time.strftime('%H:%M'), flight.travel_time, flight.price)
+            flight = Flight(
+                departure_airport_id=departure_airport_id,
+                arrival_airport_id=arrival_airport_id,
+                departure_time=departure_time,
+                travel_time=travel_time,
+                price=price
             )
-            connection.commit()
+
+            connection = get_connection()
+            with connection.cursor() as cursor:
+                cursor.execute(
+                    """
+                    INSERT INTO flights (departure_airport_id, arrival_airport_id, departure_time, travel_time, price)
+                    VALUES (%s, %s, %s, %s, %s)
+                    """,
+                    (flight.departure_airport_id, flight.arrival_airport_id,
+                     flight.departure_time.strftime('%H:%M'), flight.travel_time, flight.price)
+                )
+                connection.commit()
+
+        except Exception as e:
+            if 'connection' in locals():
+                connection.rollback()
+            return {"error": f"Error creating flight: {str(e)}"}
+        finally:
+            if 'connection' in locals():
+                connection.close()
 
         return flight
 
 
+    def delete(self, flight_id):
+        connection = get_connection()
+
+        if connection is None:
+            return {"error": "Could not establish a database connection"}
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT flight_id FROM flights WHERE flight_id = %s", (flight_id,))
+                flight = cursor.fetchone()
+
+                if flight is None:
+                    return {"error": "Flight not found"}
+
+                cursor.execute("DELETE FROM flights WHERE flight_id = %s", (flight_id,))
+                rows_deleted = cursor.rowcount
+                connection.commit()
+
+                if rows_deleted > 0:
+                    return {"message": f"Flight with ID {flight_id} has been deleted successfully"}
+                else:
+                    return {"error": "Failed to delete the flight"}
+
+        except Exception as e:
+            if 'connection' in locals():
+                connection.rollback()
+            return {"error": f"Error deleting flight: {str(e)}"}
+
+        finally:
+            if 'connection' in locals():
+                connection.close()
+
+    def delete_all(self):
+        connection = get_connection()
+
+        if connection is None:
+            return {"error": "Could not establish a database connection"}
+
+        try:
+            with connection.cursor() as cursor:
+                cursor.execute("DELETE FROM flights")
+                rows_deleted = cursor.rowcount
+                connection.commit()
+
+                if rows_deleted > 0:
+                    return {"message": f"All {rows_deleted} flights have been deleted successfully"}
+                else:
+                    return {"message": "No flights to delete"}
+
+        except Exception as e:
+            if 'connection' in locals():
+                connection.rollback()
+            return {"error": f"Error deleting flights: {str(e)}"}
+
+        finally:
+            if 'connection' in locals():
+                connection.close()
 
 
+    def get(self, flight_id):
+        connection = get_connection()
 
+        if connection is None:
+            return {"error": "Could not establish a database connection"}
 
+        try:
+            query = """
+                          SELECT flight_id, departure_airport_id, arrival_airport_id, departure_time, travel_time, price
+                          FROM flights
+                          WHERE flight_id = %s
+                      """
 
+            with connection.cursor() as cursor:
+                cursor.execute(query, (flight_id,))
+                flight = cursor.fetchone()
 
+                if flight is None:
+                    return {"error": f"Flight with ID {flight_id} not found"}
 
+                flight_data = {
+                    "id": flight[0],
+                    "departure_airport_id": flight[1],
+                    "arrival_airport_id": flight[2],
+                    "departure_time": flight[3].strftime('%H:%M') if flight[3] else None,
+                    "travel_time": flight[4],
+                    "price": flight[5]
+                }
 
+                return {"flight": flight_data}
+
+        except Exception as e:
+            return {"error": f"Error fetching flight: {str(e)}"}
+
+        finally:
+            if 'connection' in locals():
+                connection.close()
+
+    def get_all(self):
+        def get_all(self):
+            connection = get_connection()
+
+            if connection is None:
+                return {"error": "Could not establish a database connection"}
+
+            try:
+                query = """
+                              SELECT flight_id, departure_airport_id, arrival_airport_id, departure_time, travel_time, price
+                              FROM flights
+                          """
+
+                with connection.cursor() as cursor:
+                    cursor.execute(query)
+                    flights = cursor.fetchall()
+
+                    if not flights:
+                        return {"error": "No flights found"}
+
+                    flights_data = []
+                    for flight in flights:
+                        flight_data = {
+                            "id": flight[0],
+                            "departure_airport_id": flight[1],
+                            "arrival_airport_id": flight[2],
+                            "departure_time": flight[3].strftime('%H:%M') if flight[3] else None,
+                            "travel_time": flight[4],
+                            "price": flight[5]
+                        }
+                        flights_data.append(flight_data)
+
+                    return {"flights": flights_data}
+
+            except Exception as e:
+                return {"error": f"Error fetching flights: {str(e)}"}
+
+            finally:
+                if 'connection' in locals():
+                    connection.close()
 
 
 
