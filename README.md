@@ -29,43 +29,23 @@ Basic points: 15pts (For correct implementation of the base task)
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/Abiesio/flight-planner.git
+   git clone https://github.com/stanielhristov/flight_planner.git
    cd flight-planner
    ```
-
-2. Create a virtual environment and activate it:
-
-   ```bash
-   python3 -m venv venv
-   source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-   ```
-
-3. Install the dependencies:
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run the application:
-
-   ```bash
-   python -m flight_planner.app
-   ```
-
 ## Docker
 
 To run the application in a Docker container:
 
-1. Build the Docker image:
+1. Build the Docker image (optional):
 
    ```bash
-   docker build -t flight-planner .
+   docker build -t flight-planner:latest .
    ```
 
-2. Run the Docker container:
+2. Run the Docker containers:
 
    ```bash
-   docker run -p 5000:5000 flight-planner
+    docker-compose up -d
    ```
 
 ## API Endpoints
@@ -121,11 +101,3 @@ To run the application in a Docker container:
 - `GET /flights/<id>` - Get a flight by ID
 - `PUT /flights/<id>` - Edit a flight by ID
 - `DELETE /flights/<id>` - Delete a flight by ID
-
-### Explanation:
-
-- **Directory Structure**: The project is organized into a package named `flight_planner` with submodules for different components like models, routes, services, and persistence.
-
-- **Persistence Options**: Two persistence options are provided: `FileStorage` for file-based storage and `SQLStorage` for SQLite database storage.
-
-- **Virtual Environment**: The `requirements.txt` file lists the dependencies needed for the project.

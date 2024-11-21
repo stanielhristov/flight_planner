@@ -1,5 +1,5 @@
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from flight_planner.entities import Flight
 from flight_planner.services import CityService, AirportService, FlightService

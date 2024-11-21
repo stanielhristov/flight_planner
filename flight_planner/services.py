@@ -1,7 +1,7 @@
-from connection import get_connection
 from datetime import datetime
-from storage import CityStorage, FlightStorage, AirportStorage
 
+from flight_planner.connection_pg import get_connection
+from flight_planner.storage import CityStorage, FlightStorage, AirportStorage
 
 
 class CityService:
@@ -88,7 +88,6 @@ class AirportService:
 
         return storage.get_all()
 
-
     @classmethod
     def get_airport(cls, airport_id):
         storage = AirportStorage()
@@ -159,14 +158,13 @@ class FlightService:
                     "error": f"Invalid price format: {price_str}. Ensure it's a valid number with or without a dollar sign."}
 
             storage = FlightStorage()
-            database_flight = storage.create(departure_airport_id, arrival_airport_id, departure_time, travel_time, price)
+            database_flight = storage.create(departure_airport_id, arrival_airport_id, departure_time, travel_time,
+                                             price)
 
             return database_flight.to_dict()
 
         except Exception as e:
             return {"error": f"Error creating flight: {str(e)}"}
-
-
 
     @classmethod
     def get_all_flights(cls, offset, max_count, sort_by, sort_order):

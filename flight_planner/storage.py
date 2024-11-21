@@ -1,6 +1,5 @@
-from connection import get_connection
+from flight_planner.connection_pg import get_connection
 from flight_planner.entities import Flight
-
 
 
 class CityStorage:
@@ -315,7 +314,6 @@ class FlightStorage:
 
         return flight
 
-
     def delete(self, flight_id):
         connection = get_connection()
 
@@ -373,7 +371,6 @@ class FlightStorage:
         finally:
             if 'connection' in locals():
                 connection.close()
-
 
     def get(self, flight_id):
         connection = get_connection()
@@ -453,7 +450,3 @@ class FlightStorage:
             finally:
                 if 'connection' in locals():
                     connection.close()
-
-
-
-

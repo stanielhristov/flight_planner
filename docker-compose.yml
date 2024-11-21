@@ -11,12 +11,25 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./flight_planner/db:/docker-entrypoint-initdb.d
     networks:
       - postgres_network
 
-volumes:
-  postgres_data:
+  app:
+    #    image: flight-planner:latest
+    build: .
+    container_name: flight-app
+    ports:
+      - "5001:5000"
+    environment:
+      POSTGRES_HOST: postgres-db
+      POSTGRES_DB: flight-db
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin
+    depends_on:
+      - db
+    networks:
+      - postgres_network
 
 networks:
   postgres_network:
